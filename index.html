@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ChurnWatch — Kelompok 7</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+	  --bg: #f0f4f8;
+	  --surface: #ffffff;
+	  --s2: #f8fafc;
+	  --border: #e2e8f0;
+	  --text: #1e293b;
+	  --text2: #475569;
+	  --text3: #94a3b8;
+	  --red: #ef4444;
+	  --blue: #2563eb;
+	  --blue-grad: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+	  --green: #10b981;
+	  --amber: #f59e0b;
+	  --purple: #8b5cf6;
+	  --r: 20px;
+	  --sh: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+	  --sidebar-width: 280px;
+	}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden; /* Prevent horizontal scroll */
+}
+
+/* HEADER */
+header {
+  background: #0f172a;
+  color: #fff;
+  padding: 0 32px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: fixed; /* Fixed header */
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.logo {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 800;
+  font-size: 20px;
+  letter-spacing: -0.5px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo-badge {
+  background: var(--red);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.status-dot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #94a3b8;
+  font-family: 'JetBrains Mono', monospace;
+  background: rgba(255,255,255,0.05);
+  padding: 6px 12px;
+  border-radius: 100px;
+}
+
+.dot {
+  width: 8px; height: 8px; border-radius: 50%; background: #22c55e;
+  box-shadow: 0 0 0 3px rgba(34,197,94,0.2); animation: pulse 2s infinite;
+}
+.dot.red { background: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,0.2); }
+
+@keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.6; transform: scale(0.9); } }
+
+/* MAIN LAYOUT */
+.main-container {
+  display: flex;
+  margin-top: 64px; /* Space for fixed header */
+  min-height: calc(100vh - 64px);
+}
+
+/* SIDEBAR - FIXED WIDTH */
+aside {
+  width: var(--sidebar-width);
+  min-width: var(--sidebar-width); /* FORCE WIDTH */
+  flex-shrink: 0; /* PREVENT SQUISHING */
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 32px 24px;
+  position: sticky;
+  top: 64px;
+  height: calc(100vh - 64px);
+  overflow-y: auto;
+  z-index: 900;
+}
+
+.sidebar-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text3);
+  margin-bottom: 24px;
+  display: block;
+}
+
+.filter-group {
+  margin-bottom: 24px;
+}
+
+.filter-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text2);
+  margin-bottom: 8px;
+}
+
+select {
+  width: 100%;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--s2);
+  border: 2px solid transparent;
+  border-radius: 12px;
+  padding: 12px 16px;
+  appearance: none;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%233b82f6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+}
+
+select:hover { 
+  border-color: rgba(59, 130, 246, 0.3); 
+  background-color: #fff; 
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.08);
+}
+
+select:focus { 
+  border-color: var(--blue); 
+  background-color: #fff;
+  outline: none; 
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1); 
+}
+
+.cbgroup {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.cb {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+  font-weight: 500;
+  font-size: 13px;
+}
+
+.cb input { display: none; }
+
+.cb-box {
+  width: 22px; height: 22px; border-radius: 8px; border: 2px solid var(--border);
+  background: var(--surface); display: flex; align-items: center; justify-content: center; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.cb:hover .cb-box {
+  border-color: var(--blue);
+  background: rgba(37, 99, 235, 0.05);
+  transform: scale(1.05);
+}
+
+.cb input:checked + .cb-box { 
+  border-color: var(--blue); 
+  background: var(--blue); 
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);
+}
+
+.cb input:checked + .cb-box::after {
+  content: ''; display: block; width: 10px; height: 6px; border-left: 2.5px solid #fff;
+  border-bottom: 2.5px solid #fff; transform: rotate(-45deg) translateY(-1px);
+}
+
+.cb-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+/* CONTENT AREA */
+main {
+  flex: 1;
+  padding: 32px 40px 60px;
+  min-width: 0; /* Allow content to shrink if needed */
+  background: var(--bg);
+}
+
+.page-head { margin-bottom: 32px; }
+.page-title { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 28px; font-weight: 800; letter-spacing: -1px; color: var(--text); }
+.page-sub { font-size: 14px; color: var(--text2); margin-top: 4px; }
+
+/* STAT CARDS */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.stat {
+	  background: var(--blue-grad);
+	  border: none;
+	  border-radius: var(--r);
+	  padding: 24px;
+	  box-shadow: 0 10px 20px -5px rgba(37, 99, 235, 0.3);
+	  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+	  position: relative;
+	  overflow: hidden;
+	  color: #fff;
+	}
+	.stat:hover { transform: translateY(-6px); box-shadow: 0 20px 25px -5px rgba(37, 99, 235, 0.4); }
+	.stat::after {
+	  content: '';
+	  position: absolute;
+	  top: -20%;
+	  right: -10%;
+	  width: 120px;
+	  height: 120px;
+	  background: rgba(255, 255, 255, 0.1);
+	  border-radius: 50%;
+	}
+	
+	.stat-lbl { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: rgba(255,255,255,0.8); margin-bottom: 12px; }
+	.stat-val { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 30px; font-weight: 800; letter-spacing: -0.5px; line-height: 1.2; color: #fff; }
+	.stat-sub { font-size: 13px; color: rgba(255,255,255,0.7); margin-top: 6px; font-weight: 500; }
+	
+	/* Override for specific colors if needed, but keeping blue grad as primary */
+	.stat.s-red { background: linear-gradient(135deg, #f87171 0%, #b91c1c 100%); box-shadow: 0 10px 20px -5px rgba(239, 68, 68, 0.3); }
+	.stat.s-green { background: linear-gradient(135deg, #34d399 0%, #065f46 100%); box-shadow: 0 10px 20px -5px rgba(16, 185, 129, 0.3); }
+	.stat.s-amber { background: linear-gradient(135deg, #fbbf24 0%, #b45309 100%); box-shadow: 0 10px 20px -5px rgba(245, 158, 11, 0.3); }
+
+.badge {
+  display: inline-flex; align-items: center; font-size: 12px; font-weight: 600;
+  font-family: 'JetBrains Mono', monospace; padding: 4px 10px; border-radius: 8px; margin-top: 12px;
+}
+.badge-red { background: #fef2f2; color: var(--red); }
+.badge-blue { background: #eff6ff; color: var(--blue); }
+.badge-green { background: #ecfdf5; color: var(--green); }
+.badge-amber { background: #fffbeb; color: var(--amber); }
+
+/* CHARTS */
+.charts-row { display: grid; gap: 20px; margin-bottom: 20px; }
+.charts-row.two { grid-template-columns: 1fr 1fr; }
+
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 24px; box-shadow: var(--sh); }
+.card-head { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 24px; }
+.card-title { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 16px; font-weight: 700; color: var(--text); }
+.card-sub { font-size: 13px; color: var(--text3); margin-top: 4px; }
+.chart-wrap { position: relative; }
+.h220 { height: 240px; } 
+.h260 { height: 280px; }
+
+/* TABLE */
+.tbl-wrap { overflow-x: auto; margin-top: 8px; border-radius: 12px; border: 1px solid var(--border); }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th {
+  text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+  color: var(--text3); padding: 16px 16px; background: var(--s2); border-bottom: 1px solid var(--border); white-space: nowrap;
+}
+td { padding: 14px 16px; border-bottom: 1px solid var(--s2); color: var(--text); white-space: nowrap; }
+tr:last-child td { border: none; }
+tbody tr:hover td { background: #f8fafc; }
+
+.pill { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 8px; }
+.pill-red { background: #fef2f2; color: var(--red); }
+.pill-blue { background: #eff6ff; color: var(--blue); }
+.pill-green { background: #ecfdf5; color: var(--green); }
+.pill-amber { background: #fffbeb; color: var(--amber); }
+.pill-gray { background: var(--s2); color: var(--text2); }
+.pill-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+.pagination { display: flex; align-items: center; justify-content: space-between; margin-top: 20px; }
+.pag-info { font-size: 13px; color: var(--text3); font-family: 'JetBrains Mono', monospace; }
+.pag-btns { display: flex; gap: 8px; }
+.pag-btn {
+  font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; padding: 8px 16px;
+  border-radius: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; transition: all 0.2s;
+}
+.pag-btn:hover:not(:disabled) { background: var(--text); color: #fff; border-color: var(--text); }
+.pag-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+#errBanner {
+  display: none; background: #fef2f2; border: 1px solid #fee2e2; border-radius: var(--r);
+  padding: 16px 20px; margin-bottom: 24px; font-size: 14px; color: var(--red); line-height: 1.5;
+}
+
+footer { text-align: center; font-size: 12px; color: var(--text3); padding: 40px 0 20px; font-family: 'JetBrains Mono', monospace; }
+
+/* RESPONSIVE */
+@media(max-width: 1200px) {
+  .stats { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media(max-width: 992px) {
+  .main-container { flex-direction: column; }
+  aside {
+    width: 100%; min-width: 100%; height: auto; position: relative; top: 0; border-right: none; border-bottom: 1px solid var(--border);
+    padding: 24px; display: flex; flex-wrap: wrap; gap: 20px;
+  }
+  .sidebar-title { width: 100%; margin-bottom: 10px; }
+  .filter-group { margin-bottom: 0; flex: 1; min-width: 200px; }
+  .cbgroup { flex-direction: row; flex-wrap: wrap; }
+}
+
+@media(max-width: 640px) {
+  .stats { grid-template-columns: 1fr; }
+  .charts-row.two { grid-template-columns: 1fr; }
+  main { padding: 20px; }
+  .logo-badge { display: none; }
+  .filter-group { min-width: 100%; }
+}
+
+/* ===== UPGRADE UI ===== */
+
+/* Background lebih hidup */
+body {
+  background: linear-gradient(180deg,#f8fafc,#eef2ff);
+}
+
+/* Insight */
+.insight-banner {
+  background: linear-gradient(135deg,#fee2e2,#fff);
+  border:1px solid #fecaca;
+  padding:16px 20px;
+  border-radius:12px;
+  margin-bottom:20px;
+  font-weight:500;
+}
+
+/* Highlight KPI */
+.stat.highlight {
+  background: linear-gradient(135deg,#ef4444,#dc2626);
+  color:white;
+  transform:scale(1.03);
+}
+
+/* Card modern */
+.card {
+  backdrop-filter: blur(10px);
+  background: rgba(255,255,255,0.9);
+  transition:0.3s;
+}
+
+.card:hover {
+  transform: translateY(-6px);
+  box-shadow:0 20px 30px rgba(0,0,0,0.08);
+}
+
+/* Sidebar glass */
+aside {
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(10px);
+}
+
+/* Table lebih enak */
+tbody tr:nth-child(even) {
+  background:#f9fafb;
+}
+
+tbody tr:hover {
+  background:#eef2ff;
+}
+
+/* Animasi */
+.stat, .card {
+  animation:fadeUp 0.5s ease;
+}
+
+@keyframes fadeUp {
+  from {opacity:0; transform:translateY(10px);}
+  to {opacity:1;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">ChurnWatch <span class="logo-badge">KBA · Kelompok 7</span></div>
+  <div class="status-dot">
+    <span class="dot" id="connDot"></span>
+    <span id="connTxt">Menghubungkan...</span>
+  </div>
+</header>
+
+<div class="main-container">
+  <!-- SIDEBAR FILTER -->
+  <aside>
+    <span class="sidebar-title">Filter Dashboard</span>
+    
+    <div class="filter-group">
+      <label class="filter-label">Negara</label>
+      <select id="fGeo" onchange="applyAllFilters()">
+        <option value="">Semua Negara</option>
+        <option value="France">France</option>
+        <option value="Germany">Germany</option>
+        <option value="Spain">Spain</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label class="filter-label">Gender</label>
+      <select id="fGender" onchange="applyAllFilters()">
+        <option value="">Semua Gender</option>
+        <option value="1">Male</option>
+        <option value="0">Female</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label class="filter-label">Jumlah Produk</label>
+      <select id="fProducts" onchange="applyAllFilters()">
+        <option value="">Semua Produk</option>
+        <option value="1">1 Produk</option>
+        <option value="2">2 Produk</option>
+        <option value="3">3 Produk</option>
+        <option value="4">4 Produk</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label class="filter-label">Status Member</label>
+      <select id="fActive" onchange="applyAllFilters()">
+        <option value="">Semua Status</option>
+        <option value="1">Active Member</option>
+        <option value="0">Tidak Aktif</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label class="filter-label">Tampilkan di Grafik</label>
+      <div class="cbgroup">
+        <label class="cb">
+          <input type="checkbox" id="cbChurn" checked onchange="refreshCharts()">
+          <span class="cb-box"></span>
+          <span class="cb-dot" style="background:var(--red)"></span>
+          <span>Churn</span>
+        </label>
+        <label class="cb">
+          <input type="checkbox" id="cbSafe" checked onchange="refreshCharts()">
+          <span class="cb-box"></span>
+          <span class="cb-dot" style="background:var(--blue)"></span>
+          <span>Tidak Churn</span>
+        </label>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main>
+    <div class="page-head">
+      <h1 class="page-title">Customer Churn Dashboard</h1>
+      <p class="page-sub">Analisa prediksi churn berbasis Gradient Boosting · 10.000 data nasabah bank</p>
+    </div>
+
+    <div id="errBanner">
+      <strong>⚠️ Tidak dapat terhubung ke server backend.</strong><br>
+      Pastikan server sudah jalan dengan perintah:<br>
+      <code style="display:block; background:rgba(0,0,0,0.05); padding:8px; border-radius:6px; margin-top:8px; font-family:'JetBrains Mono',monospace; font-size:12px">python -m uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000</code>
+    </div>
+
+    <!-- STAT CARDS -->
+    <div class="stats">
+      <div class="stat s-red">
+        <div class="stat-lbl">Total Nasabah</div>
+        <div class="stat-val" id="sTotal">—</div>
+        <div class="stat-sub">dalam dataset</div>
+      </div>
+      <div class="stat s-red">
+        <div class="stat-lbl">Churn</div>
+        <div class="stat-val" id="sChurn">—</div>
+        <span class="badge badge-red" id="sChurnRate">—%</span>
+      </div>
+      <div class="stat s-blue">
+        <div class="stat-lbl">Tidak Churn</div>
+        <div class="stat-val" id="sSafe">—</div>
+        <span class="badge badge-blue" id="sSafeRate">—%</span>
+      </div>
+      <div class="stat s-amber">
+        <div class="stat-lbl">High Risk Customer</div>
+        <div class="stat-val" id="sHighRisk">—</div>
+        <span class="badge badge-amber" id="sHighRiskPct">dari total</span>
+      </div>
+    </div>
+
+    <!-- CHARTS -->
+    <div class="charts-row two">
+      <div class="card">
+        <div class="card-head"><div><div class="card-title">Distribusi Churn</div><div class="card-sub">Proporsi churn vs tidak churn</div></div></div>
+        <div class="chart-wrap h260"><canvas id="cPie"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div><div class="card-title">Churn per Negara</div><div class="card-sub">France / Germany / Spain</div></div></div>
+        <div class="chart-wrap h260"><canvas id="cGeo"></canvas></div>
+      </div>
+    </div>
+
+    <div class="charts-row two">
+      <div class="card">
+        <div class="card-head"><div><div class="card-title">Churn per Jumlah Produk</div><div class="card-sub">Churn rate berdasarkan NumOfProducts</div></div></div>
+        <div class="chart-wrap h220"><canvas id="cProducts"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div><div class="card-title">Active vs Tidak Aktif</div><div class="card-sub">Perbandingan churn berdasarkan status member</div></div></div>
+        <div class="chart-wrap h220"><canvas id="cActive"></canvas></div>
+      </div>
+    </div>
+
+    <div class="charts-row two">
+      <div class="card">
+        <div class="card-head"><div><div class="card-title">Kategori Risiko (ML)</div><div class="card-sub">Hasil prediksi Gradient Boosting</div></div></div>
+        <div class="chart-wrap h220"><canvas id="cRisk"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div><div class="card-title">Feature Importance</div><div class="card-sub">Faktor terpenting penyebab churn</div></div></div>
+        <div class="chart-wrap h220"><canvas id="cFeature"></canvas></div>
+      </div>
+    </div>
+
+    <!-- TABLE -->
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-head"><div><div class="card-title">Data Nasabah</div><div class="card-sub" id="tblSub">Memuat data...</div></div></div>
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Credit Score</th><th>Age</th><th>Gender</th><th>Negara</th>
+              <th>Tenure</th><th>Produk</th><th>Balance</th><th>Active</th>
+              <th>Churn Prob.</th><th>Risk Category</th><th>Prediksi ML</th><th>Aktual</th>
+            </tr>
+          </thead>
+          <tbody id="tblBody">
+            <tr><td colspan="12" style="text-align:center;padding:40px;color:var(--text3)">Memuat data nasabah...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="pagination">
+        <span class="pag-info" id="pagInfo">—</span>
+        <div class="pag-btns">
+          <button class="pag-btn" id="btnPrev" onclick="changePage(-1)" disabled>← Prev</button>
+          <button class="pag-btn" id="btnNext" onclick="changePage(1)" disabled>Next →</button>
+        </div>
+      </div>
+    </div>
+
+    <footer>ChurnWatch · Kelompok 7 · Final Project KBA · Model: Gradient Boosting · Accuracy: 86.9% · ROC-AUC: 0.870</footer>
+  </main>
+</div>
+
+<script src="./config.js"></script>
+<script src="./static_data.js"></script>
+<script>
+Chart.defaults.font.family = "'Inter', sans-serif";
+Chart.defaults.font.size = 12;
+Chart.defaults.color = '#64748b';
+
+const C = { red: '#ef4444', blue: '#3b82f6', green: '#10b981', amber: '#f59e0b', purple: '#8b5cf6', teal: '#06b6d4', pink: '#ec4899', indigo: '#6366f1' };
+let charts = {}, currentPage = 1, totalRows = 0;
+const LIMIT = 15;
+
+async function api(path) {
+  // Static mode: all dashboard data is bundled locally; no backend/API request.
+  const [endpoint, queryString = ""] = path.split("?");
+  const params = new URLSearchParams(queryString);
+  const all = window.KBA_DATA.customers;
+  let rows = all.filter(r => {
+    const geo = params.get("geography");
+    const gender = params.get("gender");
+    const products = params.get("num_of_products");
+    const active = params.get("is_active");
+    const rowGeo = r.Geography_France ? "France" : r.Geography_Germany ? "Germany" : "Spain";
+    return (!geo || rowGeo === geo)
+      && (gender === null || String(r.Gender) === gender)
+      && (products === null || String(r.NumOfProducts) === products)
+      && (active === null || String(r.IsActiveMember) === active);
+  });
+  const sum = rows.reduce((a, r) => a + r.Exited, 0);
+  const total = rows.length;
+  const summary = {
+    total_customers: total,
+    total_churn: sum,
+    total_safe: total - sum,
+    churn_rate: total ? Number((sum / total * 100).toFixed(2)) : 0
+  };
+  if (endpoint === "/" || endpoint === "") return {status:"ok",message:"Static dashboard data loaded"};
+  if (endpoint === "/api/summary") return summary;
+  if (endpoint === "/api/churn-by-geography") {
+    const out = {};
+    ["France","Germany","Spain"].forEach(g => {
+      const subset = rows.filter(r => (r.Geography_France ? "France" : r.Geography_Germany ? "Germany" : "Spain") === g);
+      const n = subset.length, churn = subset.reduce((a,r)=>a+r.Exited,0);
+      out[g] = {total:n,churn,churn_rate:n?Number((churn/n*100).toFixed(2)):0};
+    });
+    return out;
+  }
+  if (endpoint === "/api/churn-by-products") {
+    return [...new Set(rows.map(r=>r.NumOfProducts))].sort((a,b)=>a-b).map(n=>{
+      const subset=rows.filter(r=>r.NumOfProducts===n), count=subset.length, churn=subset.reduce((a,r)=>a+r.Exited,0);
+      return {num_of_products:n,total:count,churn,churn_rate:count?Number((churn/count*100).toFixed(2)):0};
+    });
+  }
+  if (endpoint === "/api/churn-by-active") {
+    const out={};
+    [["Aktif",1],["Tidak Aktif",0]].forEach(([label,val])=>{
+      const subset=rows.filter(r=>r.IsActiveMember===val), n=subset.length, churn=subset.reduce((a,r)=>a+r.Exited,0);
+      out[label]={total:n,churn,churn_rate:n?Number((churn/n*100).toFixed(2)):0};
+    });
+    return out;
+  }
+  if (endpoint === "/api/risk-category") {
+    const out={"High Risk":0,"Medium Risk":0,"Low Risk":0};
+    rows.forEach(r=>out[r.Risk_Category]++);
+    return out;
+  }
+  if (endpoint === "/api/feature-importance") return window.KBA_DATA.featureImportance;
+  if (endpoint === "/api/customers") {
+    const page=Math.max(1,Number(params.get("page")||1));
+    const limit=Math.max(1,Math.min(100,Number(params.get("limit")||20)));
+    return {total:rows.length,page,limit,data:rows.slice((page-1)*limit,page*limit)};
+  }
+  throw new Error("Endpoint lokal tidak dikenal: "+endpoint);
+}
+
+function setConn(ok) {
+  const dot = document.getElementById('connDot');
+  const txt = document.getElementById('connTxt');
+  dot.classList.toggle('red', !ok);
+  txt.textContent = ok ? 'Data Lokal Aktif ✓' : 'Data Tidak Tersedia';
+  if (!ok) document.getElementById('errBanner').style.display = 'block';
+}
+
+function mkChart(id, type, data, extra = {}) {
+  if (charts[id]) charts[id].destroy();
+  charts[id] = new Chart(document.getElementById(id).getContext('2d'), {
+    type, data,
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, pointStyle: 'circle', padding: 20, font: { weight: 500 } } } },
+      scales: type !== 'doughnut' ? {
+        x: { grid: { display: false }, border: { display: false }, ticks: { font: { weight: 500 } } },
+        y: { grid: { color: '#f1f5f9' }, border: { display: false }, ticks: { maxTicksLimit: 5 } }
+      } : undefined,
+      ...extra
+    }
+  });
+}
+
+function getFilterQS() {
+  const geo = document.getElementById('fGeo').value;
+  const gen = document.getElementById('fGender').value;
+  const prod = document.getElementById('fProducts').value;
+  const actv = document.getElementById('fActive').value;
+  let qs = "";
+  if (geo) qs += `&geography=${geo}`;
+  if (gen) qs += `&gender=${gen}`;
+  if (prod) qs += `&num_of_products=${prod}`;
+  if (actv) qs += `&is_active=${actv}`;
+  return qs;
+}
+
+async function loadSummary() {
+  const d = await api('/api/summary?' + getFilterQS());
+  document.getElementById('sTotal').textContent = d.total_customers.toLocaleString();
+  document.getElementById('sChurn').textContent = d.total_churn.toLocaleString();
+  document.getElementById('sSafe').textContent = d.total_safe.toLocaleString();
+  document.getElementById('sChurnRate').textContent = d.churn_rate + '%';
+  document.getElementById('sSafeRate').textContent = (100 - d.churn_rate).toFixed(2) + '%';
+}
+
+async function loadPie() {
+  const d = await api('/api/summary?' + getFilterQS());
+  const sC = document.getElementById('cbChurn').checked;
+  const sS = document.getElementById('cbSafe').checked;
+  const labels=[], data=[], colors=[];
+  if (sC) { labels.push('Churn'); data.push(d.total_churn); colors.push(C.red); }
+  if (sS) { labels.push('Tidak Churn'); data.push(d.total_safe); colors.push(C.blue); }
+  mkChart('cPie','doughnut', { labels, datasets:[{ data, backgroundColor:colors, borderWidth:0, hoverOffset:12 }] }, { cutout:'70%' });
+}
+
+async function loadGeo() {
+  const d = await api('/api/churn-by-geography?' + getFilterQS());
+  const sC = document.getElementById('cbChurn').checked;
+  const sS = document.getElementById('cbSafe').checked;
+  const labels = Object.keys(d);
+  const datasets = [];
+  if (sC) datasets.push({ label:'Churn', backgroundColor:C.red, borderRadius:6, data:labels.map(g=>d[g].churn) });
+  if (sS) datasets.push({ label:'Tidak Churn', backgroundColor:C.blue, borderRadius:6, data:labels.map(g=>d[g].total - d[g].churn) });
+  mkChart('cGeo','bar',{ labels, datasets });
+}
+
+async function loadProducts() {
+  const d = await api('/api/churn-by-products?' + getFilterQS());
+  const sC = document.getElementById('cbChurn').checked;
+  const sS = document.getElementById('cbSafe').checked;
+  const labels = d.map(x => x.num_of_products + ' Produk');
+  const datasets = [];
+  if (sC) datasets.push({ label:'Churn Rate (%)', backgroundColor:C.red, borderRadius:6, data:d.map(x=>x.churn_rate) });
+  if (sS) datasets.push({ label:'Tidak Churn Rate (%)', backgroundColor:C.blue, borderRadius:6, data:d.map(x=>parseFloat((100-x.churn_rate).toFixed(2))) });
+  mkChart('cProducts','bar',{ labels, datasets });
+}
+
+async function loadActive() {
+  const d = await api('/api/churn-by-active?' + getFilterQS());
+  const sC = document.getElementById('cbChurn').checked;
+  const sS = document.getElementById('cbSafe').checked;
+  const labels = Object.keys(d);
+  const datasets = [];
+  if (sC) datasets.push({ label:'Churn', backgroundColor:C.red, borderRadius:6, data:labels.map(k=>d[k].churn) });
+  if (sS) datasets.push({ label:'Tidak Churn', backgroundColor:C.blue, borderRadius:6, data:labels.map(k=>d[k].total - d[k].churn) });
+  mkChart('cActive','bar',{ labels, datasets });
+}
+
+async function loadRisk() {
+  const d = await api('/api/risk-category?' + getFilterQS());
+  const total = d['High Risk'] + d['Medium Risk'] + d['Low Risk'];
+  document.getElementById('sHighRisk').textContent = d['High Risk'].toLocaleString();
+  document.getElementById('sHighRiskPct').textContent = total > 0 ? ((d['High Risk']/total)*100).toFixed(1) + '% dari total' : '0% dari total';
+  mkChart('cRisk','doughnut',{
+    labels:['High Risk','Medium Risk','Low Risk'],
+    datasets:[{ data:[d['High Risk'],d['Medium Risk'],d['Low Risk']], backgroundColor:[C.red,C.amber,C.green], borderWidth:0, hoverOffset:12 }]
+  },{ cutout:'70%' });
+}
+
+async function loadFeature() {
+  const d = await api('/api/feature-importance?' + getFilterQS());
+  const top = d.slice(0, 8);
+  const colorList = [C.red, C.red, C.blue, C.amber, C.green, C.purple, C.teal, C.pink];
+  mkChart('cFeature','bar',{
+    labels: top.map(x => x.feature),
+    datasets:[{ label:'Importance', data:top.map(x=>x.importance), backgroundColor:top.map((_,i)=>colorList[i]||C.blue), borderRadius:6 }]
+  },{ indexAxis:'y', plugins:{ legend:{ display:false } }, scales:{ x:{ grid:{color:'#f1f5f9'}, border:{display:false} }, y:{ grid:{display:false}, border:{display:false} } } });
+}
+
+function getGeo(r) {
+  if (r.Geography_France == 1) return 'France';
+  if (r.Geography_Germany == 1) return 'Germany';
+  if (r.Geography_Spain == 1) return 'Spain';
+  return '—';
+}
+function riskPill(r) {
+  if (r==='High Risk') return `<span class="pill pill-red"><span class="pill-dot"></span>${r}</span>`;
+  if (r==='Medium Risk') return `<span class="pill pill-amber"><span class="pill-dot"></span>${r}</span>`;
+  return `<span class="pill pill-green"><span class="pill-dot"></span>${r}</span>`;
+}
+
+async function loadTable(page = 1) {
+  let qs = `?page=${page}&limit=${LIMIT}` + getFilterQS();
+  const tbody = document.getElementById('tblBody');
+  tbody.innerHTML = `<tr><td colspan="12" style="text-align:center;padding:40px;color:var(--text3)">Memuat data...</td></tr>`;
+  try {
+    const d = await api('/api/customers' + qs);
+    totalRows = d.total; currentPage = page;
+    const start = (page-1)*LIMIT+1, end = Math.min(page*LIMIT, totalRows);
+    document.getElementById('tblSub').textContent = `${totalRows.toLocaleString()} nasabah ditemukan`;
+    document.getElementById('pagInfo').textContent = `Menampilkan ${start}–${end} dari ${totalRows.toLocaleString()}`;
+    document.getElementById('btnPrev').disabled = page <= 1;
+    document.getElementById('btnNext').disabled = end >= totalRows;
+    if (!d.data.length) {
+      tbody.innerHTML = `<tr><td colspan="12" style="text-align:center;padding:40px;color:var(--text3)">Tidak ada data sesuai filter</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = d.data.map(r => `
+      <tr>
+        <td><span style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:500">${r.CreditScore}</span></td>
+        <td>${r.Age}</td>
+        <td>${r.Gender==1?'Male':'Female'}</td>
+        <td>${getGeo(r)}</td>
+        <td>${r.Tenure} thn</td>
+        <td>${r.NumOfProducts}</td>
+        <td>$${Number(r.Balance).toLocaleString('en-US',{maximumFractionDigits:0})}</td>
+        <td>${r.IsActiveMember==1 ? '<span class="pill pill-green"><span class="pill-dot"></span>Aktif</span>' : '<span class="pill pill-gray"><span class="pill-dot"></span>Tidak</span>'}</td>
+        <td><span style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;color:${r.Churn_Probability>=0.7?'var(--red)':r.Churn_Probability>=0.4?'var(--amber)':'var(--green)'}">${(r.Churn_Probability*100).toFixed(1)}%</span></td>
+        <td>${riskPill(r.Risk_Category)}</td>
+        <td>${r.Predicted_Exited==1 ? '<span class="pill pill-red"><span class="pill-dot"></span>Churn</span>' : '<span class="pill pill-blue"><span class="pill-dot"></span>Aman</span>'}</td>
+        <td>${r.Exited==1 ? '<span class="pill pill-red"><span class="pill-dot"></span>Churn</span>' : '<span class="pill pill-blue"><span class="pill-dot"></span>Tidak</span>'}</td>
+      </tr>`).join('');
+  } catch(e) { tbody.innerHTML = `<tr><td colspan="12" style="text-align:center;padding:40px;color:var(--red)">❌ Gagal memuat data lokal</td></tr>`; }
+}
+
+function changePage(dir) { loadTable(currentPage + dir); }
+function refreshCharts() { loadPie(); loadGeo(); loadProducts(); loadActive(); loadRisk(); loadFeature(); loadSummary(); }
+function applyAllFilters() { loadTable(1); refreshCharts(); }
+
+async function init() {
+  try { await api('/'); setConn(true); } catch(e) { setConn(false); }
+  applyAllFilters();
+}
+init();
+</script>
+</body>
+</html>
